@@ -1,0 +1,88 @@
+-- =========================================
+-- Tabela: ALOCACOES
+-- =========================================
+CREATE TABLE alocacoes (
+  id                 SERIAL PRIMARY KEY,
+  nome               VARCHAR(100)        NOT NULL,
+  data_inicio        DATE                NOT NULL,
+  data_fim           DATE,
+  carga_horas_semanais SMALLINT          NOT NULL CHECK (carga_horas_semanais BETWEEN 0 AND 168),
+  custo_mensal       NUMERIC(12,2)       NOT NULL CHECK (custo_mensal >= 0)
+);
+
+-- =========================================
+-- Tabela: FUNCIONARIOS
+-- Relacionamento: cada FUNCIONARIO possui 0..1 ALOCACAO
+-- =========================================
+CREATE TABLE funcionarios (
+  id                 SERIAL PRIMARY KEY,
+  nome               VARCHAR(120)        NOT NULL,
+  cpf                CHAR(11)            NOT NULL UNIQUE,
+  email              VARCHAR(150),
+  data_admissao      DATE                NOT NULL,
+  salario            NUMERIC(12,2)       NOT NULL CHECK (salario >= 0),
+  status             VARCHAR(20)         NOT NULL DEFAULT 'ATIVO',
+  alocacao_id        INTEGER,
+  CONSTRAINT fk_funcionarios_alocacoes
+    FOREIGN KEY (alocacao_id)
+    REFERENCES alocacoes(id)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL
+);
+
+-- =========================================
+-- Tabela: TAREFAS
+-- =========================================
+CREATE TABLE tarefas (
+  id                 SERIAL PRIMARY KEY,
+  titulo             VARCHAR(120)        NOT NULL,
+  descricao          TEXT,
+  prioridade         SMALLINT            NOT NULL CHECK (prioridade BETWEEN 1 AND 5),
+  status             VARCHAR(20)         NOT NULL DEFAULT 'ABERTA',
+  prazo              DATE,
+  estimativa_horas   NUMERIC(6,2)        CHECK (estimativa_horas >= 0)
+);
+
+-- =========================================
+-- Tabela: PROJETOS
+-- Relacionamentos:
+--   - cada PROJETO pertence a 0..1 ALOCACAO
+--   - cada PROJETO contém 0..1 TAREFA
+-- =========================================
+CREATE TABLE projetos (
+  id                 SERIAL PRIMARY KEY,
+  nome               VARCHAR(150)        NOT NULL,
+  descricao          TEXT,
+  orcamento          NUMERIC(14,2)       CHECK (orcamento >= 0),
+  data_inicio        DATE,
+  data_fim           DATE,
+  alocacao_id        INTEGER,
+  tarefa_id          INTEGER,
+  CONSTRAINT fk_projetos_alocacoes
+    FOREIGN KEY (alocacao_id)
+    REFERENCES alocacoes(id)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL,
+  CONSTRAINT fk_projetos_tarefas
+    FOREIGN KEY (tarefa_id)
+    REFERENCES tarefas(id)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL
+);
+
+-- =========================================
+-- Tabela: DEPARTAMENTOS
+-- Relacionamento: cada DEPARTAMENTO contém 0..1 FUNCIONARIO
+-- =========================================
+CREATE TABLE departamentos (
+  id                 SERIAL PRIMARY KEY,
+  nome               VARCHAR(120)        NOT NULL,
+  sigla              VARCHAR(10)         NOT NULL,
+  funcionario_id     INTEGER,
+  CONSTRAINT uq_departamentos_sigla UNIQUE (sigla),
+  CONSTRAINT fk_departamentos_funcionarios
+    FOREIGN KEY (funcionario_id)
+    REFERENCES funcionarios(id)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL
+);
